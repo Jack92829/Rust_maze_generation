@@ -1,11 +1,36 @@
 use std::option::Option;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use std::io::stdin;
 
 fn main() {
-    let mut grid = construct_grid(6);
+    loop {
+        let mut num = String::new();
 
-    mazeify(&mut grid);
+        println!("Enter a maze size below!");
+        stdin().read_line(&mut num).expect("Hey, that inputs bad!");
+
+        let num: u8 = match num.trim().parse() {
+            Ok(value) => value,
+            Err(bad_value) => {
+                println!("{} is not a valid number", bad_value);
+                continue
+            }
+        };
+
+        let mut grid = construct_grid(num);
+
+        for row in mazeify(&mut grid).into_iter() {
+            for column in row {
+                if *column == 0 {
+                    print!("⬜");
+                } else {
+                    print!("⬛");
+                }
+            }
+            println!("");
+        }
+    }
 }
 
 fn construct_grid(size: u8) -> Vec<Vec<u8>> {
@@ -40,8 +65,6 @@ fn get_unvisited_neighbours(cell: &[i8; 2], visited: &Vec<[i8; 2]>, max: i8) -> 
         }
     }
 
-    println!("{:?}", neighbours);
-
     if neighbours.is_empty() {
         return None;
     } else {
@@ -49,21 +72,37 @@ fn get_unvisited_neighbours(cell: &[i8; 2], visited: &Vec<[i8; 2]>, max: i8) -> 
     }
 }
 
+fn remove_wall(current_cell: &[i8; 2], neighbour: &[i8; 2], grid: &mut Vec<Vec<u8>>) {
+    let current_coords = [2 * current_cell[0] + 1, 2 * current_cell[1] + 1];
+    let neighbour_coords = [2 * neighbour[0] + 1, 2 * neighbour[1] + 1];
+
+    let x_diff = (current_coords[0] - neighbour_coords[0]) / 2;
+    let y_diff = (current_coords[1] - neighbour_coords[1]) / 2;
+
+    let wall_coords = [neighbour_coords[0] + x_diff, neighbour_coords[1] + y_diff];
+
+    grid[wall_coords[1] as usize][wall_coords[0] as usize] = 0
+}
+
 fn mazeify(grid: &mut Vec<Vec<u8>>) -> &mut Vec<Vec<u8>> {
     let mut rng = thread_rng();
-    let mut visited: Vec<[i8; 2]> = vec![[1, 1]];
-    let mut stack: Vec<[i8; 2]> = vec![[1, 1]];
+    let mut visited: Vec<[i8; 2]> = vec![[0, 0]];
+    let mut stack: Vec<[i8; 2]> = vec![[0, 0]];
 
     while !stack.is_empty() {
-        let mut current_cell = stack.pop().unwrap();
-        let neighbour = match get_unvisited_neighbours(&current_cell, &visited, (grid.len() - 1) as i8) {
-            Some(neighbours) => neighbours.choose(&mut rng).cloned().unwrap(),
+        let current_cell = stack.pop().unwrap();
+        let neighbour = match get_unvisited_neighbours(&current_cell, &visited, ((grid.len() - 1) / 2) as i8) {
+            Some(neighbours) => {
+                stack.push(current_cell);
+                neighbours.choose(&mut rng).cloned().unwrap()
+            },
             None => continue
         };
 
-        println!("{:?}", neighbour);
+        remove_wall(&current_cell, &neighbour, grid);
 
+        stack.push(neighbour);
+        visited.push(neighbour);
     }
-
     return grid;
 }
