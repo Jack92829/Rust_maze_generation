@@ -1,4 +1,6 @@
 use std::option::Option;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 fn main() {
     let mut grid = construct_grid(6);
@@ -48,10 +50,20 @@ fn get_unvisited_neighbours(cell: &[i8; 2], visited: &Vec<[i8; 2]>, max: i8) -> 
 }
 
 fn mazeify(grid: &mut Vec<Vec<u8>>) -> &mut Vec<Vec<u8>> {
-    let mut visited: Vec<[i8; 2]> = vec![[0, 0]];
-    let current_cell = visited.remove(0);
+    let mut rng = thread_rng();
+    let mut visited: Vec<[i8; 2]> = vec![[1, 1]];
+    let mut stack: Vec<[i8; 2]> = vec![[1, 1]];
 
-    let neighbours = get_unvisited_neighbours(&current_cell, &visited, (grid.len() - 1) as i8);
+    while !stack.is_empty() {
+        let mut current_cell = stack.pop().unwrap();
+        let neighbour = match get_unvisited_neighbours(&current_cell, &visited, (grid.len() - 1) as i8) {
+            Some(neighbours) => neighbours.choose(&mut rng).cloned().unwrap(),
+            None => continue
+        };
+
+        println!("{:?}", neighbour);
+
+    }
 
     return grid;
 }
