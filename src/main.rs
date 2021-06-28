@@ -49,6 +49,10 @@ fn construct_grid(size: u8) -> Vec<Vec<u8>> {
         }
     }
 
+    for row in &grid {
+        println!("{:?}", row);
+    }
+
     return grid;
 }
 
